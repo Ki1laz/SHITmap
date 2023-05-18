@@ -14,9 +14,9 @@ global client
 
 # Check whether the ip address is alive
 def ip_scan():
+    # Only check whether the single host is alive
+    global target_ip
     while True:
-        # Only check whether the single host is alive
-        global target_ip
         target_ip = input("please input your target ip(input \"quit\" to stop):")
         if target_ip == "quit":
             break
@@ -80,6 +80,34 @@ def ports_range_scan():
         break
 
 
+def c_segment_scan():
+    global target_ip
+    while True:
+        target_ip = input("please input your target ip(input \"quit\" to stop):")
+        if target_ip == "quit":
+            break
+        ip_legal = r"(?:\d{1,3}\.){3}\d{1,3}"
+        target_ip = socket.gethostbyname(target_ip)
+        c_segment = target_ip.split(".")
+        i = 1
+        for A in range(1, 256):
+            c_segment.append(str(i))
+            i += 1
+            c_segment_result = re.search(ip_legal, os.popen(f"ping {'.'.join(map(str, c_segment[0:3]+[str(c_segment[A])]))}").read())
+            time_error = r"Request timed out\."
+            value_error = r"^Ping request could not find host\s.*"
+            error1 = re.search(time_error, os.popen(f"ping {'.'.join(map(str, c_segment[0:3]+[str(c_segment[A])]))}").read())
+            error2 = re.match(value_error, os.popen(f"ping {'.'.join(map(str, c_segment[0:3]+[str(c_segment[A])]))}").read())
+            c_segment_addr = c_segment_result.group()
+            if error1:
+                print("your target: ", c_segment_addr, ": timeout,dead maybe")
+            elif error2:
+                print("your target: ", c_segment_addr, ": maybe your target ip was wrong,check it then try again")
+            else:
+                print("your target: ", c_segment_addr, ": alive")
+
+
+
 print("READY TO ROCK THE WORLD? \
       \n          /＞　　 フ \
 　 　　\n          | 　_　 _| \
@@ -94,8 +122,10 @@ print("=========SHITmap=========\n"
       "=======CODE BY KILLA=====")
 print("Welcome to SHITmap,here is operation manual\n \
       --ISCAN  Check whether the ip address is alive\n \
-      --PSCAN   Check whether the port of the target website is open\n "
+      --PSCAN  Check whether the port of the target website is open\n \
+      --CSCAN  Check whether ip of the whole c segment is alive"
       )
+
 while True:
     parameter = input("please input the parameter so that you can use its corresponding function\
 (input \"quit\" to exit):")
@@ -105,6 +135,8 @@ while True:
             ip_scan()
         elif option == "PSCAN":
             port_scan()
+        elif option == "CSCAN":
+            c_segment_scan()
         else:
             print("please correct your parameter and try again")
             continue
